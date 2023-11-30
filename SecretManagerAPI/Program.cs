@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SecretManagerAPI.Infrastructure;
+using SecretManagerAPI.Management.Common.Interfaces;
+using SecretManagerAPI.Management.Services;
 using System.Text;
 
 IConfigurationBuilder configurationBuild = new ConfigurationBuilder();
@@ -48,6 +50,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddTransient<IJwtService, JwtService>();
 
 var app = builder.Build();
 
