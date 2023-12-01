@@ -52,6 +52,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<IJwtService, JwtService>();
+builder.Services.AddTransient<ISecretsManagerService, SecretsManagerService>();
 
 var app = builder.Build();
 
