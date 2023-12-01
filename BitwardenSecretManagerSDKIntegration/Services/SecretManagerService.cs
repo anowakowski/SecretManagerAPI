@@ -1,6 +1,7 @@
 ﻿using Bitwarden.Sdk;
 using BitwardenSecretManagerSDKIntegration.Common.Interfaces;
 using BitwardenSecretManagerSDKIntegration.Exceptions;
+using BitwardenSecretManagerSDKIntegration.Extensions;
 using BitwardenSecretManagerSDKIntegration.Models;
 
 namespace BitwardenSecretManagerSDKIntegration.Services
@@ -30,21 +31,17 @@ namespace BitwardenSecretManagerSDKIntegration.Services
             }
         }
 
-        public SecretModel GetSecret(Guid organizationId, string secretKey, string projectName)
+        public SecretModel GetSecret(SecretRequestModel model)
         {
-            if (!CheckIfUserIsAuthorizedOnBWSecretManager()) throw new NotAuthorizedException("You are currentrly not authorized on bitwarden secret manager");
-            CheckIfOrganizationExists(organizationId);
-            if (!CheckIfProjectExists(projectName, organizationId)) throw new ProjectNotExistsException($"project {projectName} not exists");            
+            var modelInternal = Create(model);
 
-            var secrets = _bitwardenClient.Secrets.List(organizationId);
+            modelInternal
+                .UserIsAuthorizedOnBWSecretManagerValidation(_bitwardenClient, _disposed)
+                .OrganizationExistsValidation(_bitwardenClient)
+                .ProjectExistsValidation(_bitwardenClient)
+                .GetSecretAndValidate(_bitwardenClient);
 
-            if (!secrets.Data.Any()) throw new SecretNotExistsException($"you currently havan't any secrets on your organization: {organizationId}");
-
-            var secret = secrets.Data.FirstOrDefault(x => x.Key == secretKey);
-
-            if (secret == null) throw new SecretNotExistsException($"your secret: {secretKey} is not exist in your organization: {organizationId}");
-
-            var secretApikeyId = secret.Id;
+            var secretApikeyId = modelInternal.Secret.Id;
             var secretResponse = _bitwardenClient.Secrets.Get(secretApikeyId);
 
             return new SecretModel(secretResponse.Value);
@@ -59,33 +56,6 @@ namespace BitwardenSecretManagerSDKIntegration.Services
             }
         }
 
-        private bool CheckIfUserIsAuthorizedOnBWSecretManager()
-        {
-            if (_disposed || _bitwardenClient == null) return false;
-
-            return true;
-        }
-
-        private bool CheckIfProjectExists(string projectName, Guid organizationId)
-        {
-            var projects = _bitwardenClient.Projects.List(organizationId);
-            var projectList = projects.Data.ToList();
-
-            var foundedProject = projectList.FirstOrDefault(x => x.Name == projectName);
-
-            return foundedProject != null;
-        }
-
-        private void CheckIfOrganizationExists(Guid organizationId)
-        {
-            try
-            {
-                _bitwardenClient.Projects.List(organizationId);
-            }
-            catch(BitwardenException ex)
-            {
-                throw new OrganizationNotExistException($"Your organization: {organizationId} not exists");
-            }
-        }
+        private SecretRequestInternalModel Create(SecretRequestModel model) => new SecretRequestInternalModel(model);
     }
 }

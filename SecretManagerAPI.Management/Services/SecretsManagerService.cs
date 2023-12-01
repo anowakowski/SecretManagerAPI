@@ -1,6 +1,7 @@
 ﻿using SecretManagerAPI.Management.Common.Interfaces;
 using BitwardenSecretManagerSDKIntegration.Services;
 using SecretManagerAPI.Management.DTOs;
+using BitwardenSecretManagerSDKIntegration.Models;
 
 namespace SecretManagerAPI.Management.Services
 {
@@ -22,7 +23,7 @@ namespace SecretManagerAPI.Management.Services
 
                 try
                 {
-                    var secretModel = bwSecretManager.GetSecret(organizationId, secretKey, projectName);
+                    var secretModel = bwSecretManager.GetSecret(new SecretRequestModel(organizationId, secretKey, projectName));
                     secretValue = secretModel.Value;
                 }
                 catch(Exception ex)
