@@ -1,5 +1,6 @@
 ﻿using SecretManagerAPI.Management.Common.Interfaces;
 using BitwardenSecretManagerSDKIntegration.Services;
+using SecretManagerAPI.Management.DTOs;
 
 namespace SecretManagerAPI.Management.Services
 {
@@ -7,7 +8,7 @@ namespace SecretManagerAPI.Management.Services
     {
         public SecretsManagerService() { }
 
-        public string GetSecretValue(string accessToken, Guid organizationId, string secretKey, string projectName)
+        public SecretResponseDTO GetSecretValue(string accessToken, Guid organizationId, string secretKey, string projectName)
         {
             var secretValue = string.Empty;
             using(var bwSecretManager = new SecretManagerService())
@@ -16,14 +17,21 @@ namespace SecretManagerAPI.Management.Services
                 if (!result.isAuthenticated)
                 {
                     var message = result.message;
-
+                    return new SecretResponseDTO(message, true);
                 }
 
-                var secretModel = bwSecretManager.GetSecret(organizationId, secretKey, projectName);
-                secretValue = secretModel.Value;
+                try
+                {
+                    var secretModel = bwSecretManager.GetSecret(organizationId, secretKey, projectName);
+                    secretValue = secretModel.Value;
+                }
+                catch(Exception ex)
+                {
+                    return new SecretResponseDTO(ex.Message, true);
+                }
             }
 
-            return secretValue;
+            return new SecretResponseDTO(secretValue);
         }
     }
 }

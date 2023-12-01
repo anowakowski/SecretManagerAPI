@@ -22,7 +22,23 @@ namespace SecretManagerAPI.Controllers
         {
             var result = _secretsManagerService.GetSecretValue(model.AccessToken, model.OrganizationId, model.SecretKey, model.ProjectName);
 
-            return Ok(result);
+            if (result == null)
+            {
+                return Forbid();
+            }
+
+            return result.IsError ? GetForbiden(result.ErrorMessage) : Ok(result.SecretValue);
+        }
+
+        private ObjectResult GetForbiden(string errorMessage)
+        {
+            return Problem(
+                type: "/docs/errors/forbidden",
+                title: "Error during GetSecretValue from Bitwarden Secure Manager",
+                detail: errorMessage,
+                statusCode: StatusCodes.Status403Forbidden,
+                instance: HttpContext.Request.Path
+            );
         }
     }
 }

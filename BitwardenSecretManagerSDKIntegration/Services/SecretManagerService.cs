@@ -33,7 +33,8 @@ namespace BitwardenSecretManagerSDKIntegration.Services
         public SecretModel GetSecret(Guid organizationId, string secretKey, string projectName)
         {
             if (!CheckIfUserIsAuthorizedOnBWSecretManager()) throw new NotAuthorizedException("You are currentrly not authorized on bitwarden secret manager");
-            if (!CheckIfProjectExists(projectName, organizationId)) throw new ProjectNotExistsException($"project {projectName} not exists");
+            CheckIfOrganizationExists(organizationId);
+            if (!CheckIfProjectExists(projectName, organizationId)) throw new ProjectNotExistsException($"project {projectName} not exists");            
 
             var secrets = _bitwardenClient.Secrets.List(organizationId);
 
@@ -73,6 +74,18 @@ namespace BitwardenSecretManagerSDKIntegration.Services
             var foundedProject = projectList.FirstOrDefault(x => x.Name == projectName);
 
             return foundedProject != null;
+        }
+
+        private void CheckIfOrganizationExists(Guid organizationId)
+        {
+            try
+            {
+                _bitwardenClient.Projects.List(organizationId);
+            }
+            catch(BitwardenException ex)
+            {
+                throw new OrganizationNotExistException($"Your organization: {organizationId} not exists");
+            }
         }
     }
 }
